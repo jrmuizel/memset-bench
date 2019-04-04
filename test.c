@@ -4,12 +4,20 @@
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #endif
+#include <time.h>
 #define SIZE 2880*1800*4*16
 
-long long time() {
+long long get_time() {
 #ifdef __APPLE__
         return mach_absolute_time();
+#else
+	struct timespec t;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	long long p = t.tv_nsec;
+	p += t.tv_sec * 1000*1000 *1000;
+	return p;
 #endif
+
 }
 
 void fill_all(int *dst) {
@@ -30,7 +38,7 @@ void fill_partial(int *dst, int slices) {
 
 void time_partial(int *dst, int slices) {
         {
-        long long start = time();
+        long long start = get_time();
         int length = SIZE;
         int slice_length = length/slices;
         for (int slice = 0; slice<slices; slice++) {
@@ -39,15 +47,7 @@ void time_partial(int *dst, int slices) {
                 }
         }
 
-        long long end = time();
-                        mach_timebase_info_data_t timebaseInfo;
-                // Apple's QA1398 suggests that the output from mach_timebase_info
-                // will not change while a program is running, so it should be safe
-                // to cache the result.
-                kern_return_t kr = mach_timebase_info(&timebaseInfo);
-
-                double sNsPerTick = (double)(timebaseInfo.numer) / timebaseInfo.denom;
-//                printf("%f\n", sNsPerTick);
+        long long end = get_time();
         printf("%10lld %8d %d %f\n", end - start, slices, slice_length, ((double)SIZE*40*1000*1000)/(1024.*1024*(end-start)));
         }
 }
@@ -56,9 +56,9 @@ int main() {
         int *dst = malloc(SIZE); 
         fill_all(dst);
                 {
-                        long long start = time();
+                        long long start = get_time();
         fill_all(dst);
-        long long end = time();
+        long long end = get_time();
         printf("%lld\n", end - start);
         }
         for (int i=0; i<18; i++) {
