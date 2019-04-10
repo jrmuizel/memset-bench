@@ -5,7 +5,9 @@
 #include <mach/mach_time.h>
 #endif
 #include <time.h>
-#define SIZE 2880*1800*4*16
+
+//#define SIZE 2880*1800*4*16
+#define SIZE 3840*2160*4
 
 long long get_time() {
 #ifdef __APPLE__
